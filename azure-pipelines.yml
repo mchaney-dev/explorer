@@ -1,7 +1,3 @@
-# Azure runs only on staging pushes and release tags. Pull-request validation
-# is handled by GitHub Actions (.github/workflows/ci.yml), so PR builds are
-# disabled here. Note: `pr: none` is required — omitting the block entirely
-# would make Azure default to building every PR.
 trigger:
   branches:
     include:
@@ -14,16 +10,11 @@ pr: none
 
 variables:
   NODE_VERSION: '20.x'
-  # Redirect Cargo's and npm's caches to workspace paths. $(Pipeline.Workspace)
-  # resolves on every OS (unlike $(HOME)), so the same cache keys work across
-  # the Windows/macOS/Linux build matrix. Setting CARGO_HOME as a variable also
-  # makes cargo actually read from the restored cache.
   CARGO_HOME: $(Pipeline.Workspace)/.cargo
   npm_config_cache: $(Pipeline.Workspace)/.npm
 
 stages:
 
-# ── Stage 1: Check ────────────────────────────────────────────────────────────
 # Runs on every push and PR. Two parallel jobs — frontend and Rust — so
 # a TypeScript error and a Rust error both surface in the same run.
 - stage: Check
@@ -53,8 +44,6 @@ stages:
 
   - job: RustCheck
     displayName: 'cargo check + clippy'
-    # Pinned to 22.04: ubuntu-latest now maps to 24.04, and Tauri v2 wants the
-    # older glibc/webkit-4.1 baseline so binaries stay backward-compatible.
     pool:
       vmImage: ubuntu-22.04
     steps:
@@ -94,9 +83,7 @@ stages:
     - script: cargo clippy --manifest-path src-tauri/Cargo.toml
       displayName: 'cargo clippy'
 
-# ── Stage 2: Docs ─────────────────────────────────────────────────────────────
-# Renders PlantUML diagrams to SVG and publishes them as a pipeline artifact.
-# Skipped on pull requests — only runs on direct pushes to tracked branches.
+# Renders PlantUML diagrams to SVG and publishes them as a pipeline artifact
 - stage: Docs
   displayName: Docs
   dependsOn: Check
@@ -107,23 +94,18 @@ stages:
     pool:
       vmImage: ubuntu-latest
     steps:
-    # No Java install step: the hosted Ubuntu agent ships a JDK on PATH, and
-    # PlantUML 1.2024.8 runs on any Java 8+.
     - script: |
         curl -L -o plantuml.jar \
           https://github.com/plantuml/plantuml/releases/download/v1.2024.8/plantuml-1.2024.8.jar
         java -jar plantuml.jar docs/diagrams/models.puml -tsvg \
           -o "$(Build.ArtifactStagingDirectory)/diagrams"
       displayName: 'Render models.puml'
-    - task: PublishBuildArtifacts@1
+    - task: PublishPipelineArtifact@1
       inputs:
-        pathToPublish: '$(Build.ArtifactStagingDirectory)/diagrams'
-        artifactName: diagrams
+        targetPath: '$(Build.ArtifactStagingDirectory)/diagrams'
+        artifact: diagrams
       displayName: 'Publish SVG artifact'
 
-# ── Stage 3: Build ────────────────────────────────────────────────────────────
-# Full Tauri binary build across all three platforms. Only triggers on tags
-# matching v* (e.g. v0.1.0) so it doesn't burn minutes on every commit.
 - stage: Build
   displayName: 'Tauri build'
   dependsOn: Check
@@ -166,10 +148,10 @@ stages:
       displayName: 'Update Rust to stable'
     - script: npx tauri build
       displayName: 'tauri build'
-    - task: PublishBuildArtifacts@1
+    - task: PublishPipelineArtifact@1
       inputs:
-        pathToPublish: 'src-tauri/target/release/bundle'
-        artifactName: tauri-windows
+        targetPath: 'src-tauri/target/release/bundle'
+        artifact: tauri-windows
       displayName: 'Publish Windows artifacts'
 
   - job: macOS
@@ -210,15 +192,14 @@ stages:
       displayName: 'Update Rust to stable'
     - script: npx tauri build
       displayName: 'tauri build'
-    - task: PublishBuildArtifacts@1
+    - task: PublishPipelineArtifact@1
       inputs:
-        pathToPublish: 'src-tauri/target/release/bundle'
-        artifactName: tauri-macos
+        targetPath: 'src-tauri/target/release/bundle'
+        artifact: tauri-macos
       displayName: 'Publish macOS artifacts'
 
   - job: Linux
     displayName: 'Linux (.AppImage / .deb)'
-    # Pinned to 22.04 for the same backward-compat reason as the check job.
     pool:
       vmImage: ubuntu-22.04
     steps:
@@ -269,8 +250,47 @@ stages:
       displayName: 'Update Rust to stable'
     - script: npx tauri build
       displayName: 'tauri build'
-    - task: PublishBuildArtifacts@1
+    - task: PublishPipelineArtifact@1
       inputs:
-        pathToPublish: 'src-tauri/target/release/bundle'
-        artifactName: tauri-linux
+        targetPath: 'src-tauri/target/release/bundle'
+        artifact: tauri-linux
       displayName: 'Publish Linux artifacts'
+
+- stage: Release
+  displayName: 'GitHub Release'
+  dependsOn: Build
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+  jobs:
+  - job: PublishRelease
+    displayName: 'Publish installers to GitHub Releases'
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - download: current
+      artifact: tauri-windows
+    - download: current
+      artifact: tauri-macos
+    - download: current
+      artifact: tauri-linux
+
+    - task: GitHubRelease@1
+      displayName: 'Create GitHub Release'
+      inputs:
+        gitHubConnection: 'mchaney-dev'
+        repositoryName: '$(Build.Repository.Name)'
+        action: 'create'
+        target: '$(Build.SourceVersion)'
+        tagSource: 'userSpecifiedTag'
+        tag: '$(Build.SourceBranchName)'
+        title: 'Explorer $(Build.SourceBranchName)'
+        releaseNotesSource: 'inline'
+        releaseNotesInline: 'Automated release for $(Build.SourceBranchName). Installers for Windows, macOS, and Linux are attached below.'
+        assets: |
+          $(Pipeline.Workspace)/tauri-windows/**/*.msi
+          $(Pipeline.Workspace)/tauri-windows/**/*.exe
+          $(Pipeline.Workspace)/tauri-macos/**/*.dmg
+          $(Pipeline.Workspace)/tauri-linux/**/*.AppImage
+          $(Pipeline.Workspace)/tauri-linux/**/*.deb
+        addChangeLog: true
+        isDraft: false
+        isPreRelease: true
