@@ -27,4 +27,4 @@ Early development.
 - **Feed**: a multi-media content feed that ranks sources by what you actually open
 - **Tags**: one tagging system shared across notes, tasks, and graph nodes
 - **Themes**: light and dark, with a configurable default view
-- **Modular**: turn whole sections on or off
+- **Modular**: turn features on or off
