@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::shared::Timestamp;
@@ -11,7 +11,7 @@ pub enum Status {
     Todo,
     InProgress,
     Done,
-    Cancelled
+    Cancelled,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ pub enum Priority {
     Low,
     Medium,
     High,
-    Urgent
+    Urgent,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,14 +37,11 @@ pub struct Task {
     pub status: Option<Status>,
     pub priority: Option<Priority>,
     pub due_date: Option<Timestamp>,
-    pub tags: Vec<Tag>
+    pub tags: Vec<Tag>,
 }
 
 impl Task {
-    pub fn new(
-        title: impl Into<String>,
-        description: impl Into<String>
-    ) -> Self {
+    pub fn new(title: impl Into<String>, description: impl Into<String>) -> Self {
         let now = Utc::now();
 
         Self {
@@ -60,7 +57,7 @@ impl Task {
             status: None,
             priority: None,
             due_date: None,
-            tags: Vec::new()
+            tags: Vec::new(),
         }
     }
 

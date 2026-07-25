@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::shared::Timestamp;
@@ -10,7 +10,7 @@ pub struct User {
     pub id: String,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
-    pub preferences: Preferences
+    pub preferences: Preferences,
 }
 
 impl User {
@@ -21,7 +21,7 @@ impl User {
             id: Ulid::new().to_string(),
             created_at: now,
             updated_at: now,
-            preferences: Preferences::new()
+            preferences: Preferences::new(),
         }
     }
 

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::shared::Timestamp;
@@ -25,7 +25,7 @@ pub struct Features {
     pub tasks_enabled: bool,
     pub calendar_enabled: bool,
     pub feed_enabled: bool,
-    pub notes_enabled: bool
+    pub notes_enabled: bool,
 }
 
 impl Features {
@@ -41,7 +41,7 @@ impl Features {
             tasks_enabled: true,
             calendar_enabled: true,
             feed_enabled: true,
-            notes_enabled: true
+            notes_enabled: true,
         }
     }
 

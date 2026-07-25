@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::feed::feed_source::FeedSource;
@@ -97,8 +97,7 @@ impl FeedInterest {
     pub fn implicit_score(&self) -> f64 {
         let days = (Utc::now() - self.created_at).num_days().max(1) as f64;
 
-        (self.open_count as f64 * 1.0
-            + self.save_count as f64 * 2.5
+        (self.open_count as f64 * 1.0 + self.save_count as f64 * 2.5
             - self.dismiss_count as f64 * 1.5)
             / days
     }

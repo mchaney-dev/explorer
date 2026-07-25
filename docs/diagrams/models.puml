@@ -1,0 +1,239 @@
+@startuml explorer-models
+!pragma layout smetana
+title explorer - data model (src-tauri/src/models)
+
+skinparam backgroundColor #FBF6EF
+skinparam shadowing false
+skinparam defaultFontName Monospaced
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FBF4EC
+  BorderColor #B7410E
+  ArrowColor #A2917C
+  FontColor #2A241F
+  AttributeFontColor #2A241F
+  StereotypeFontColor #6E645A
+}
+
+' Every struct also carries: id: String (ULID), created_at: Timestamp, updated_at: Timestamp
+' Type aliases: Timestamp = DateTime<Utc>, HexColor = String
+
+package "tasks" as m_tasks {
+  class Project {
+    +title : String
+    +is_archived : bool
+    +color : Option<HexColor>
+    --
+    +add_task(Task)
+    +progress() : f64
+    +completed_task_count() : usize
+  }
+  class Task {
+    +title : String
+    +status : Option<Status>
+    +priority : Option<Priority>
+    +due_date : Option<Timestamp>
+    +completed_at : Option<Timestamp>
+    --
+    +mark_as_done()
+    +is_overdue() : bool
+  }
+  class RecurrenceRule {
+    +frequency : Option<Frequency>
+    +interval : Option<i32>
+    +days_of_week : Vec<DayOfWeek>
+    --
+    +is_active() : bool
+  }
+}
+
+package "notes" as m_notes {
+  class Note {
+    +title : String
+    +is_pinned : bool
+    --
+    +blocks_ordered() : Vec<NoteBlock>
+  }
+  class NoteBlock {
+    +block_type : Option<BlockType>
+    +content : String
+    +position : Option<f64>
+  }
+}
+
+package "calendar" as m_calendar {
+  class Calendar {
+    +name : String
+    +is_visible : bool
+    +is_default : bool
+    --
+    +add_event(CalendarEvent)
+  }
+  class CalendarEvent {
+    +title : String
+    +start_datetime : Option<Timestamp>
+    +end_datetime : Option<Timestamp>
+    +is_all_day : bool
+    --
+    +duration_minutes() : Option<i64>
+    +overlaps(CalendarEvent) : bool
+  }
+}
+
+package "knowledge_graph" as m_kg {
+  class Graph {
+    +title : String
+    --
+    +add_node(Node)
+    +neighbors(id) : Vec<Node>
+    +remove_node(id) : Option<Node>
+  }
+  class Node {
+    +node_type : NodeType
+    +x : i32
+    +y : i32
+    +title : String
+  }
+  class Connection {
+    +label : Option<ConnectionLabel>
+    +is_directed : bool
+    --
+    +other_end(id) : Option<str>
+  }
+}
+
+package "feed" as m_feed {
+  class FeedInterest {
+    +topic : String
+    +explicit_weight : Option<f64>
+    +open_count : i32
+    --
+    +record_open()
+    +score() : f64
+  }
+  class FeedSource {
+    +source_type : Option<SourceType>
+    +name : String
+    +is_enabled : bool
+  }
+}
+
+package "user" as m_user {
+  class User {
+    +preferences : Preferences
+    --
+    +set_preferences(Preferences)
+  }
+  class Preferences {
+    +display_name : String
+    +theme : Theme
+    +default_view : DefaultView
+    --
+    +ranked_interests() : Vec<FeedInterest>
+  }
+  class Features {
+    +tasks_enabled : bool
+    +calendar_enabled : bool
+    --
+    +toggle(Feature)
+  }
+}
+
+class Tag {
+  +label : String
+  +color : Option<HexColor>
+}
+
+package "enumerations" as m_enums {
+  enum Status {
+    Todo
+    InProgress
+    Done
+    Cancelled
+  }
+  enum Priority {
+    Low
+    Medium
+    High
+    Urgent
+  }
+  enum Frequency {
+    Daily
+    Weekly
+    Monthly
+    Yearly
+  }
+  enum DayOfWeek {
+    Monday
+    ..
+    Sunday
+  }
+  enum BlockType {
+    Text
+    Drawing
+    Image
+    Embed
+  }
+  enum NodeType {
+    File
+    Video
+    Audio
+    Text
+    Image
+  }
+  enum ConnectionLabel {
+    RelatesTo
+    CausedBy
+    IsA
+    Uses
+  }
+  enum SourceType {
+    Text
+    Image
+    Video
+    Audio
+  }
+  enum Theme {
+    Light
+    Dark
+  }
+  enum DefaultView {
+    Graph
+    Feed
+    Tasks
+    Notes
+    Calendar
+  }
+  enum Feature {
+    KnowledgeGraph
+    NotesWhiteboard
+    Tasks
+    Calendar
+    Feed
+    Notes
+  }
+}
+
+' composition — parent owns child
+Project "1" *-- "0..*" Task : tasks
+Note "1" *-- "0..*" NoteBlock : note_blocks
+Calendar "1" *-- "0..*" CalendarEvent : calendar_events
+Graph "1" *-- "0..*" Node : nodes
+Graph "1" *-- "0..*" Connection : connections
+User "1" *-- "1" Preferences : preferences
+Preferences "1" *-- "1" Features : features
+Preferences "1" *-- "0..*" FeedInterest : feed_interests
+FeedInterest "1" *-- "0..*" FeedSource : sources
+
+' aggregation — shared tags
+Task "1" o-- "0..*" Tag : tags
+Project "1" o-- "0..*" Tag : tags
+Note "1" o-- "0..*" Tag : tags
+Node "1" o-- "0..*" Tag : tags
+
+' reference — loose link by id string
+Task ..> RecurrenceRule : recurrence_id
+Task ..> Task : parent_id
+CalendarEvent ..> RecurrenceRule : recurrence_id
+Connection ..> Node : endpoints
+@enduml
