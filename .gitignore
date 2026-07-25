@@ -11,7 +11,7 @@ node_modules/
 # dotenv environment variables file
 .env
 
-# .vscode personal files (settings.json IS committed so format-on-save is shared)
+# .vscode: settings.json + tasks.json are committed (shared config); launch.json stays personal
 .vscode/launch.json
 .vscode/tasks.json
 
