@@ -1,0 +1,18 @@
+{
+  // Format every file when you save it.
+  "editor.formatOnSave": true,
+
+  // Rust: rust-analyzer runs rustfmt on save, so your code always matches the
+  // `cargo fmt --check` gate in CI. No more red format checks.
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+
+  // Frontend: use VS Code's built-in TypeScript formatter (no extra deps).
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  }
+}
