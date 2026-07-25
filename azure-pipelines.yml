@@ -1,0 +1,277 @@
+trigger:
+  branches:
+    include:
+      - staging
+  tags:
+    include:
+      - 'v*'
+
+pr:
+  branches:
+    include:
+      - main
+      - dev
+      - staging
+
+variables:
+  NODE_VERSION: '20.x'
+  # Redirect Cargo's and npm's caches to workspace paths. $(Pipeline.Workspace)
+  # resolves on every OS (unlike $(HOME)), so the same cache keys work across
+  # the Windows/macOS/Linux build matrix. Setting CARGO_HOME as a variable also
+  # makes cargo actually read from the restored cache.
+  CARGO_HOME: $(Pipeline.Workspace)/.cargo
+  npm_config_cache: $(Pipeline.Workspace)/.npm
+
+stages:
+
+# ── Stage 1: Check ────────────────────────────────────────────────────────────
+# Runs on every push and PR. Two parallel jobs — frontend and Rust — so
+# a TypeScript error and a Rust error both surface in the same run.
+- stage: Check
+  displayName: Check
+  jobs:
+
+  - job: Frontend
+    displayName: 'TypeScript + Vite build'
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(NODE_VERSION)
+      displayName: 'Use Node $(NODE_VERSION)'
+    - task: Cache@2
+      inputs:
+        key: 'npm | "$(Agent.OS)" | package-lock.json'
+        restoreKeys: |
+          npm | "$(Agent.OS)"
+        path: $(npm_config_cache)
+      displayName: 'Cache npm'
+    - script: npm ci
+      displayName: 'npm ci'
+    - script: npm run build
+      displayName: 'tsc + vite build'
+
+  - job: RustCheck
+    displayName: 'cargo check + clippy'
+    # Pinned to 22.04: ubuntu-latest now maps to 24.04, and Tauri v2 wants the
+    # older glibc/webkit-4.1 baseline so binaries stay backward-compatible.
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+    - task: Cache@2
+      inputs:
+        key: 'cargo-home | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-home | "$(Agent.OS)"
+        path: $(CARGO_HOME)
+      displayName: 'Cache cargo registry'
+    - task: Cache@2
+      inputs:
+        key: 'cargo-target-check | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-target-check | "$(Agent.OS)"
+        path: src-tauri/target
+      displayName: 'Cache cargo target'
+    - script: |
+        sudo apt-get update -qq
+        sudo apt-get install -y \
+          libwebkit2gtk-4.1-dev \
+          build-essential \
+          curl \
+          wget \
+          file \
+          libxdo-dev \
+          libssl-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev
+      displayName: 'Install Tauri v2 Linux deps'
+    - script: |
+        rustup update stable
+        rustup default stable
+      displayName: 'Update Rust to stable'
+    - script: cargo check --manifest-path src-tauri/Cargo.toml
+      displayName: 'cargo check'
+    - script: cargo clippy --manifest-path src-tauri/Cargo.toml
+      displayName: 'cargo clippy'
+
+# ── Stage 2: Docs ─────────────────────────────────────────────────────────────
+# Renders PlantUML diagrams to SVG and publishes them as a pipeline artifact.
+# Skipped on pull requests — only runs on direct pushes to tracked branches.
+- stage: Docs
+  displayName: Docs
+  dependsOn: Check
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  jobs:
+  - job: RenderDiagrams
+    displayName: 'Render PlantUML -> SVG'
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    # No Java install step: the hosted Ubuntu agent ships a JDK on PATH, and
+    # PlantUML 1.2024.8 runs on any Java 8+.
+    - script: |
+        curl -L -o plantuml.jar \
+          https://github.com/plantuml/plantuml/releases/download/v1.2024.8/plantuml-1.2024.8.jar
+        java -jar plantuml.jar docs/diagrams/models.puml -tsvg \
+          -o "$(Build.ArtifactStagingDirectory)/diagrams"
+      displayName: 'Render models.puml'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/diagrams'
+        artifactName: diagrams
+      displayName: 'Publish SVG artifact'
+
+# ── Stage 3: Build ────────────────────────────────────────────────────────────
+# Full Tauri binary build across all three platforms. Only triggers on tags
+# matching v* (e.g. v0.1.0) so it doesn't burn minutes on every commit.
+- stage: Build
+  displayName: 'Tauri build'
+  dependsOn: Check
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+  jobs:
+
+  - job: Windows
+    displayName: 'Windows (.msi / .exe)'
+    pool:
+      vmImage: windows-latest
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(NODE_VERSION)
+      displayName: 'Use Node $(NODE_VERSION)'
+    - task: Cache@2
+      inputs:
+        key: 'npm | "$(Agent.OS)" | package-lock.json'
+        restoreKeys: |
+          npm | "$(Agent.OS)"
+        path: $(npm_config_cache)
+      displayName: 'Cache npm'
+    - task: Cache@2
+      inputs:
+        key: 'cargo-home | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-home | "$(Agent.OS)"
+        path: $(CARGO_HOME)
+      displayName: 'Cache cargo registry'
+    - task: Cache@2
+      inputs:
+        key: 'cargo-target-build | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-target-build | "$(Agent.OS)"
+        path: src-tauri/target
+      displayName: 'Cache cargo target'
+    - script: npm ci
+      displayName: 'npm ci'
+    - script: rustup update stable && rustup default stable
+      displayName: 'Update Rust to stable'
+    - script: npx tauri build
+      displayName: 'tauri build'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'src-tauri/target/release/bundle'
+        artifactName: tauri-windows
+      displayName: 'Publish Windows artifacts'
+
+  - job: macOS
+    displayName: 'macOS (.dmg / .app)'
+    pool:
+      vmImage: macos-latest
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(NODE_VERSION)
+      displayName: 'Use Node $(NODE_VERSION)'
+    - task: Cache@2
+      inputs:
+        key: 'npm | "$(Agent.OS)" | package-lock.json'
+        restoreKeys: |
+          npm | "$(Agent.OS)"
+        path: $(npm_config_cache)
+      displayName: 'Cache npm'
+    - task: Cache@2
+      inputs:
+        key: 'cargo-home | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-home | "$(Agent.OS)"
+        path: $(CARGO_HOME)
+      displayName: 'Cache cargo registry'
+    - task: Cache@2
+      inputs:
+        key: 'cargo-target-build | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-target-build | "$(Agent.OS)"
+        path: src-tauri/target
+      displayName: 'Cache cargo target'
+    - script: npm ci
+      displayName: 'npm ci'
+    - script: |
+        rustup update stable
+        rustup default stable
+      displayName: 'Update Rust to stable'
+    - script: npx tauri build
+      displayName: 'tauri build'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'src-tauri/target/release/bundle'
+        artifactName: tauri-macos
+      displayName: 'Publish macOS artifacts'
+
+  - job: Linux
+    displayName: 'Linux (.AppImage / .deb)'
+    # Pinned to 22.04 for the same backward-compat reason as the check job.
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(NODE_VERSION)
+      displayName: 'Use Node $(NODE_VERSION)'
+    - task: Cache@2
+      inputs:
+        key: 'npm | "$(Agent.OS)" | package-lock.json'
+        restoreKeys: |
+          npm | "$(Agent.OS)"
+        path: $(npm_config_cache)
+      displayName: 'Cache npm'
+    - task: Cache@2
+      inputs:
+        key: 'cargo-home | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-home | "$(Agent.OS)"
+        path: $(CARGO_HOME)
+      displayName: 'Cache cargo registry'
+    - task: Cache@2
+      inputs:
+        key: 'cargo-target-build | "$(Agent.OS)" | src-tauri/Cargo.lock'
+        restoreKeys: |
+          cargo-target-build | "$(Agent.OS)"
+        path: src-tauri/target
+      displayName: 'Cache cargo target'
+    - script: npm ci
+      displayName: 'npm ci'
+    - script: |
+        sudo apt-get update -qq
+        sudo apt-get install -y \
+          libwebkit2gtk-4.1-dev \
+          build-essential \
+          curl \
+          wget \
+          file \
+          libxdo-dev \
+          libssl-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev \
+          patchelf
+      displayName: 'Install Tauri v2 Linux deps'
+    - script: |
+        rustup update stable
+        rustup default stable
+      displayName: 'Update Rust to stable'
+    - script: npx tauri build
+      displayName: 'tauri build'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'src-tauri/target/release/bundle'
+        artifactName: tauri-linux
+      displayName: 'Publish Linux artifacts'
