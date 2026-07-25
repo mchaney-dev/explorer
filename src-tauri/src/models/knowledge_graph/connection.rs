@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::shared::Timestamp;
@@ -25,10 +25,7 @@ pub struct Connection {
 }
 
 impl Connection {
-    pub fn new(
-        source_node_id: impl Into<String>,
-        dest_node_id: impl Into<String>,
-    ) -> Self {
+    pub fn new(source_node_id: impl Into<String>, dest_node_id: impl Into<String>) -> Self {
         let now = Utc::now();
 
         Self {

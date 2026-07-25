@@ -1,7 +1,7 @@
 [package]
 name = "explorer"
-version = "0.1.0"
-description = "A Tauri App"
+version = "0.0.0"
+description = "A local-first desktop app for keeping your notes, tasks, calendar, knowledge graph, and custom content feeds in one place."
 authors = ["mchaney-dev"]
 edition = "2021"
 

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::knowledge_graph::connection::Connection;
@@ -85,7 +85,10 @@ impl Graph {
     }
 
     pub fn remove_connection(&mut self, connection_id: &str) -> Option<Connection> {
-        let idx = self.connections.iter().position(|c| c.id == connection_id)?;
+        let idx = self
+            .connections
+            .iter()
+            .position(|c| c.id == connection_id)?;
         let connection = self.connections.remove(idx);
         self.touch();
         Some(connection)
@@ -97,7 +100,10 @@ impl Graph {
 
     /// Every connection with an endpoint at `node_id`.
     pub fn connections_for(&self, node_id: &str) -> Vec<&Connection> {
-        self.connections.iter().filter(|c| c.touches(node_id)).collect()
+        self.connections
+            .iter()
+            .filter(|c| c.touches(node_id))
+            .collect()
     }
 
     /// The nodes directly connected to `node_id` (deduplicated, resolved to

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::shared::hex_color::HexColor;

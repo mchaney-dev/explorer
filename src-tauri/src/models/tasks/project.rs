@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::shared::hex_color::HexColor;
@@ -17,14 +17,11 @@ pub struct Project {
     pub title: String,
     pub description: String,
     pub color: Option<HexColor>,
-    pub tags: Vec<Tag>
+    pub tags: Vec<Tag>,
 }
 
 impl Project {
-    pub fn new(
-        title: impl Into<String>,
-        description: impl Into<String>
-    ) -> Self {
+    pub fn new(title: impl Into<String>, description: impl Into<String>) -> Self {
         let now = Utc::now();
 
         Self {
@@ -36,7 +33,7 @@ impl Project {
             title: title.into(),
             description: description.into(),
             color: None,
-            tags: Vec::new()
+            tags: Vec::new(),
         }
     }
 
