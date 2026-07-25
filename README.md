@@ -1,4 +1,7 @@
 # Explorer
+
+[![CI](https://github.com/mchaney-dev/explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/mchaney-dev/explorer/actions/workflows/ci.yml)
+
 A local-first desktop app for keeping your notes, tasks, calendar, knowledge graph, and custom content feeds in one place. Built as an accessible alternative to Obsidian and Logseq.
 
 ## Status

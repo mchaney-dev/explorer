@@ -1,16 +1,16 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::feed::feed_interest::FeedInterest;
-use crate::models::user::features::Features;
 use crate::models::shared::{HexColor, Timestamp};
+use crate::models::user::features::Features;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Theme {
     Light,
-    Dark
+    Dark,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -20,7 +20,7 @@ pub enum DefaultView {
     Feed,
     Tasks,
     Notes,
-    Calendar
+    Calendar,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,7 +34,7 @@ pub struct Preferences {
     pub accent_color: Option<HexColor>,
     pub features: Features,
     pub sidebar_collapsed: bool,
-    pub default_view: DefaultView
+    pub default_view: DefaultView,
 }
 
 impl Preferences {
@@ -51,7 +51,7 @@ impl Preferences {
             accent_color: None,
             features: Features::new(),
             sidebar_collapsed: false,
-            default_view: DefaultView::Graph
+            default_view: DefaultView::Graph,
         }
     }
 
@@ -107,7 +107,10 @@ impl Preferences {
     }
 
     pub fn remove_feed_interest(&mut self, interest_id: &str) -> Option<FeedInterest> {
-        let idx = self.feed_interests.iter().position(|i| i.id == interest_id)?;
+        let idx = self
+            .feed_interests
+            .iter()
+            .position(|i| i.id == interest_id)?;
         let interest = self.feed_interests.remove(idx);
         self.touch();
         Some(interest)

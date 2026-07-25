@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 use crate::models::shared::{HexColor, Timestamp};
@@ -10,14 +10,11 @@ pub struct Tag {
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
     pub label: String,
-    pub color: Option<HexColor>
+    pub color: Option<HexColor>,
 }
 
 impl Tag {
-    pub fn new(
-        label: impl Into<String>,
-        color: impl Into<Option<HexColor>>
-    ) -> Self {
+    pub fn new(label: impl Into<String>, color: impl Into<Option<HexColor>>) -> Self {
         let now = Utc::now();
 
         Self {
@@ -25,7 +22,7 @@ impl Tag {
             created_at: now,
             updated_at: now,
             label: label.into(),
-            color: color.into()
+            color: color.into(),
         }
     }
 
