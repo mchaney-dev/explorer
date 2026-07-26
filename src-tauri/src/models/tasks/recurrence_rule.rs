@@ -136,3 +136,159 @@ impl Default for RecurrenceRule {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::test_support::{future, past};
+
+    // TC-RECUR-001
+    #[test]
+    fn new_defaults() {
+        let r = RecurrenceRule::new();
+        assert!(r.frequency.is_none());
+        assert!(r.interval.is_none());
+        assert!(r.day_of_month.is_none());
+        assert!(r.days_of_week.is_empty());
+        assert!(r.end_date.is_none());
+    }
+
+    // TC-RECUR-002
+    #[test]
+    fn with_frequency_sets_it() {
+        let r = RecurrenceRule::new().with_frequency(Frequency::Weekly);
+        assert!(matches!(r.frequency, Some(Frequency::Weekly)));
+    }
+
+    // TC-RECUR-003
+    #[test]
+    fn with_interval_sets_it() {
+        assert_eq!(RecurrenceRule::new().with_interval(3).interval, Some(3));
+    }
+
+    // TC-RECUR-004
+    #[test]
+    fn with_days_of_week_sets_them() {
+        let r = RecurrenceRule::new().with_days_of_week(vec![DayOfWeek::Monday, DayOfWeek::Friday]);
+        assert_eq!(r.days_of_week.len(), 2);
+    }
+
+    // TC-RECUR-005
+    #[test]
+    fn with_day_of_month_sets_it() {
+        assert_eq!(
+            RecurrenceRule::new().with_day_of_month(15).day_of_month,
+            Some(15)
+        );
+    }
+
+    // TC-RECUR-006
+    #[test]
+    fn with_end_date_sets_it() {
+        let end = future();
+        assert_eq!(RecurrenceRule::new().with_end_date(end).end_date, Some(end));
+    }
+
+    // TC-RECUR-007
+    #[test]
+    fn set_frequency_and_interval() {
+        let mut r = RecurrenceRule::new();
+        r.set_frequency(Some(Frequency::Daily));
+        r.set_interval(Some(2));
+        assert!(matches!(r.frequency, Some(Frequency::Daily)));
+        assert_eq!(r.interval, Some(2));
+        assert!(r.updated_at >= r.created_at);
+    }
+
+    // TC-RECUR-008
+    #[test]
+    fn add_day_adds() {
+        let mut r = RecurrenceRule::new();
+        r.add_day(DayOfWeek::Monday);
+        assert_eq!(r.days_of_week.len(), 1);
+    }
+
+    // TC-RECUR-009
+    #[test]
+    fn add_day_ignores_duplicate() {
+        let mut r = RecurrenceRule::new();
+        r.add_day(DayOfWeek::Monday);
+        r.add_day(DayOfWeek::Monday);
+        assert_eq!(r.days_of_week.len(), 1);
+    }
+
+    // TC-RECUR-010
+    #[test]
+    fn remove_day_removes() {
+        let mut r = RecurrenceRule::new();
+        r.add_day(DayOfWeek::Monday);
+        r.remove_day(DayOfWeek::Monday);
+        assert!(r.days_of_week.is_empty());
+    }
+
+    // TC-RECUR-011
+    #[test]
+    fn effective_interval_returns_set_value() {
+        assert_eq!(
+            RecurrenceRule::new().with_interval(4).effective_interval(),
+            4
+        );
+    }
+
+    // TC-RECUR-012
+    #[test]
+    fn effective_interval_defaults_to_one() {
+        assert_eq!(RecurrenceRule::new().effective_interval(), 1);
+    }
+
+    // TC-RECUR-013
+    #[test]
+    fn effective_interval_floors_at_one() {
+        assert_eq!(
+            RecurrenceRule::new().with_interval(0).effective_interval(),
+            1
+        );
+    }
+
+    // TC-RECUR-014
+    #[test]
+    fn has_ended_true_when_past() {
+        assert!(RecurrenceRule::new().with_end_date(past()).has_ended());
+    }
+
+    // TC-RECUR-015
+    #[test]
+    fn has_ended_false_when_future() {
+        assert!(!RecurrenceRule::new().with_end_date(future()).has_ended());
+    }
+
+    // TC-RECUR-016
+    #[test]
+    fn has_ended_false_without_end_date() {
+        assert!(!RecurrenceRule::new().has_ended());
+    }
+
+    // TC-RECUR-017
+    #[test]
+    fn is_active_when_frequency_set_and_not_ended() {
+        let r = RecurrenceRule::new()
+            .with_frequency(Frequency::Daily)
+            .with_end_date(future());
+        assert!(r.is_active());
+    }
+
+    // TC-RECUR-018
+    #[test]
+    fn is_active_false_without_frequency() {
+        assert!(!RecurrenceRule::new().is_active());
+    }
+
+    // TC-RECUR-019
+    #[test]
+    fn is_active_false_when_ended() {
+        let r = RecurrenceRule::new()
+            .with_frequency(Frequency::Daily)
+            .with_end_date(past());
+        assert!(!r.is_active());
+    }
+}

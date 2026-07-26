@@ -103,3 +103,71 @@ impl Default for Features {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TC-FEAT-001
+    #[test]
+    fn new_enables_all() {
+        let f = Features::new();
+        assert!(f.knowledge_graph_enabled);
+        assert!(f.notes_whiteboard_enabled);
+        assert!(f.tasks_enabled);
+        assert!(f.calendar_enabled);
+        assert!(f.feed_enabled);
+        assert!(f.notes_enabled);
+    }
+
+    // TC-FEAT-002
+    #[test]
+    fn is_enabled_reflects_flags() {
+        let mut f = Features::new();
+        assert!(f.is_enabled(Feature::Tasks));
+        f.tasks_enabled = false;
+        assert!(!f.is_enabled(Feature::Tasks));
+    }
+
+    // TC-FEAT-003
+    #[test]
+    fn set_changes_only_target_feature() {
+        let mut f = Features::new();
+        f.set(Feature::Feed, false);
+        assert!(!f.feed_enabled);
+        assert!(f.tasks_enabled, "other features must be untouched");
+        assert!(f.calendar_enabled);
+    }
+
+    // TC-FEAT-004
+    #[test]
+    fn toggle_flips_feature() {
+        let mut f = Features::new();
+        f.toggle(Feature::Notes);
+        assert!(!f.is_enabled(Feature::Notes));
+        f.toggle(Feature::Notes);
+        assert!(f.is_enabled(Feature::Notes));
+    }
+
+    // TC-FEAT-005
+    #[test]
+    fn enable_all_sets_all_true() {
+        let mut f = Features::new();
+        f.disable_all();
+        f.enable_all();
+        assert!(f.tasks_enabled && f.feed_enabled && f.notes_enabled);
+    }
+
+    // TC-FEAT-006
+    #[test]
+    fn disable_all_sets_all_false() {
+        let mut f = Features::new();
+        f.disable_all();
+        assert!(!f.knowledge_graph_enabled);
+        assert!(!f.notes_whiteboard_enabled);
+        assert!(!f.tasks_enabled);
+        assert!(!f.calendar_enabled);
+        assert!(!f.feed_enabled);
+        assert!(!f.notes_enabled);
+    }
+}
