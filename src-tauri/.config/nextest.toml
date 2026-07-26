@@ -1,0 +1,9 @@
+# cargo-nextest configuration.
+#
+# The `ci` profile writes a JUnit XML results file that Azure DevOps'
+# PublishTestResults task reads. Output lands at:
+#   src-tauri/target/nextest/ci/junit.xml
+#
+# Run locally with:  cargo nextest run --profile ci
+[profile.ci.junit]
+path = "junit.xml"

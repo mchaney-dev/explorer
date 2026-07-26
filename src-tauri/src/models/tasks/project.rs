@@ -141,3 +141,166 @@ impl Project {
         self.tags.iter().any(|t| t.id == tag_id)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::tag::Tag;
+    use crate::models::tasks::task::Task;
+
+    fn done_task() -> Task {
+        let mut t = Task::new("done", "");
+        t.mark_as_done();
+        t
+    }
+
+    // TC-PROJ-001
+    #[test]
+    fn new_defaults() {
+        let p = Project::new("P", "d");
+        assert!(!p.is_archived);
+        assert!(p.tasks.is_empty());
+        assert!(p.tags.is_empty());
+    }
+
+    // TC-PROJ-002
+    #[test]
+    fn with_color_sets_color() {
+        let p = Project::new("P", "d").with_color("#111".to_string());
+        assert_eq!(p.color.as_deref(), Some("#111"));
+    }
+
+    // TC-PROJ-003
+    #[test]
+    fn setters_change_fields() {
+        let mut p = Project::new("P", "d");
+        p.set_title("New");
+        p.set_description("nd");
+        p.set_color(Some("#222".to_string()));
+        assert_eq!(p.title, "New");
+        assert_eq!(p.description, "nd");
+        assert_eq!(p.color.as_deref(), Some("#222"));
+        assert!(p.updated_at >= p.created_at);
+    }
+
+    // TC-PROJ-004
+    #[test]
+    fn archive_and_unarchive() {
+        let mut p = Project::new("P", "d");
+        p.archive();
+        assert!(p.is_archived);
+        p.unarchive();
+        assert!(!p.is_archived);
+    }
+
+    // TC-PROJ-005
+    #[test]
+    fn add_task_appends_and_stamps_project_id() {
+        let mut p = Project::new("P", "d");
+        p.add_task(Task::new("t", ""));
+        assert_eq!(p.task_count(), 1);
+        assert_eq!(p.tasks[0].project_id.as_deref(), Some(p.id.as_str()));
+    }
+
+    // TC-PROJ-006
+    #[test]
+    fn remove_task_present_returns_it() {
+        let mut p = Project::new("P", "d");
+        let t = Task::new("t", "");
+        let id = t.id.clone();
+        p.add_task(t);
+        assert!(p.remove_task(&id).is_some());
+        assert!(p.is_empty());
+    }
+
+    // TC-PROJ-007
+    #[test]
+    fn find_task_and_mut() {
+        let mut p = Project::new("P", "d");
+        let t = Task::new("t", "");
+        let id = t.id.clone();
+        p.add_task(t);
+        assert!(p.find_task(&id).is_some());
+        p.find_task_mut(&id).unwrap().set_title("Edited");
+        assert_eq!(p.find_task(&id).unwrap().title, "Edited");
+    }
+
+    // TC-PROJ-008
+    #[test]
+    fn task_count_and_is_empty() {
+        let mut p = Project::new("P", "d");
+        assert!(p.is_empty());
+        p.add_task(Task::new("t", ""));
+        assert_eq!(p.task_count(), 1);
+        assert!(!p.is_empty());
+    }
+
+    // TC-PROJ-009
+    #[test]
+    fn completed_task_count_counts_done() {
+        let mut p = Project::new("P", "d");
+        p.add_task(done_task());
+        p.add_task(Task::new("open", ""));
+        assert_eq!(p.completed_task_count(), 1);
+    }
+
+    // TC-PROJ-010
+    #[test]
+    fn progress_is_completed_over_total() {
+        let mut p = Project::new("P", "d");
+        p.add_task(done_task());
+        p.add_task(Task::new("open", ""));
+        assert_eq!(p.progress(), 0.5);
+    }
+
+    // TC-PROJ-011
+    #[test]
+    fn progress_zero_for_empty_project() {
+        assert_eq!(Project::new("P", "d").progress(), 0.0);
+    }
+
+    // TC-PROJ-012
+    #[test]
+    fn add_tag_adds() {
+        let mut p = Project::new("P", "d");
+        p.add_tag(Tag::new("t", None));
+        assert_eq!(p.tags.len(), 1);
+    }
+
+    // TC-PROJ-013
+    #[test]
+    fn add_tag_ignores_duplicate() {
+        let mut p = Project::new("P", "d");
+        let tag = Tag::new("t", None);
+        p.add_tag(tag.clone());
+        p.add_tag(tag);
+        assert_eq!(p.tags.len(), 1);
+    }
+
+    // TC-PROJ-014
+    #[test]
+    fn remove_tag_present_returns_true() {
+        let mut p = Project::new("P", "d");
+        let tag = Tag::new("t", None);
+        let id = tag.id.clone();
+        p.add_tag(tag);
+        assert!(p.remove_tag(&id));
+    }
+
+    // TC-PROJ-015
+    #[test]
+    fn remove_tag_absent_returns_false() {
+        assert!(!Project::new("P", "d").remove_tag("nope"));
+    }
+
+    // TC-PROJ-016
+    #[test]
+    fn has_tag_reflects_membership() {
+        let mut p = Project::new("P", "d");
+        let tag = Tag::new("t", None);
+        let id = tag.id.clone();
+        p.add_tag(tag);
+        assert!(p.has_tag(&id));
+        assert!(!p.has_tag("nope"));
+    }
+}

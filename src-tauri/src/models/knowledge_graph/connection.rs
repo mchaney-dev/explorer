@@ -91,3 +91,87 @@ impl Connection {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TC-CONN-001
+    #[test]
+    fn new_defaults() {
+        let c = Connection::new("a", "b");
+        assert_eq!(c.source_node_id.as_deref(), Some("a"));
+        assert_eq!(c.dest_node_id.as_deref(), Some("b"));
+        assert!(!c.is_directed);
+        assert!(c.label.is_none());
+    }
+
+    // TC-CONN-002
+    #[test]
+    fn with_label_sets_label() {
+        let c = Connection::new("a", "b").with_label(ConnectionLabel::Uses);
+        assert!(matches!(c.label, Some(ConnectionLabel::Uses)));
+    }
+
+    // TC-CONN-003
+    #[test]
+    fn directed_sets_flag() {
+        let c = Connection::new("a", "b").directed();
+        assert!(c.is_directed);
+    }
+
+    // TC-CONN-004
+    #[test]
+    fn set_label_changes_label() {
+        let mut c = Connection::new("a", "b");
+        c.set_label(Some(ConnectionLabel::IsA));
+        assert!(matches!(c.label, Some(ConnectionLabel::IsA)));
+        assert!(c.updated_at >= c.created_at);
+    }
+
+    // TC-CONN-005
+    #[test]
+    fn set_directed_changes_flag() {
+        let mut c = Connection::new("a", "b");
+        c.set_directed(true);
+        assert!(c.is_directed);
+        assert!(c.updated_at >= c.created_at);
+    }
+
+    // TC-CONN-006
+    #[test]
+    fn reverse_swaps_endpoints() {
+        let mut c = Connection::new("a", "b");
+        c.reverse();
+        assert_eq!(c.source_node_id.as_deref(), Some("b"));
+        assert_eq!(c.dest_node_id.as_deref(), Some("a"));
+    }
+
+    // TC-CONN-007
+    #[test]
+    fn touches_true_for_either_endpoint() {
+        let c = Connection::new("a", "b");
+        assert!(c.touches("a"));
+        assert!(c.touches("b"));
+    }
+
+    // TC-CONN-008
+    #[test]
+    fn touches_false_for_unrelated() {
+        assert!(!Connection::new("a", "b").touches("z"));
+    }
+
+    // TC-CONN-009
+    #[test]
+    fn other_end_returns_opposite() {
+        let c = Connection::new("a", "b");
+        assert_eq!(c.other_end("a"), Some("b"));
+        assert_eq!(c.other_end("b"), Some("a"));
+    }
+
+    // TC-CONN-010
+    #[test]
+    fn other_end_none_for_non_endpoint() {
+        assert_eq!(Connection::new("a", "b").other_end("z"), None);
+    }
+}

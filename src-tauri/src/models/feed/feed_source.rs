@@ -89,3 +89,55 @@ impl FeedSource {
         self.touch();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TC-FEEDSRC-001
+    #[test]
+    fn new_defaults() {
+        let s = FeedSource::new("Blog", "https://blog.example");
+        assert!(s.is_enabled);
+        assert!(!s.requires_key);
+        assert!(s.source_type.is_none());
+    }
+
+    // TC-FEEDSRC-002
+    #[test]
+    fn with_type_sets_type() {
+        let s = FeedSource::new("B", "u").with_type(SourceType::Video);
+        assert!(matches!(s.source_type, Some(SourceType::Video)));
+    }
+
+    // TC-FEEDSRC-003
+    #[test]
+    fn requiring_key_sets_flag() {
+        assert!(FeedSource::new("B", "u").requiring_key().requires_key);
+    }
+
+    // TC-FEEDSRC-004
+    #[test]
+    fn setters_change_fields() {
+        let mut s = FeedSource::new("B", "u");
+        s.set_name("New");
+        s.set_base_url("https://new.example");
+        s.set_type(Some(SourceType::Audio));
+        assert_eq!(s.name, "New");
+        assert_eq!(s.base_url, "https://new.example");
+        assert!(matches!(s.source_type, Some(SourceType::Audio)));
+        assert!(s.updated_at >= s.created_at);
+    }
+
+    // TC-FEEDSRC-005
+    #[test]
+    fn enable_disable_toggle() {
+        let mut s = FeedSource::new("B", "u");
+        s.disable();
+        assert!(!s.is_enabled);
+        s.enable();
+        assert!(s.is_enabled);
+        s.toggle_enabled();
+        assert!(!s.is_enabled);
+    }
+}
