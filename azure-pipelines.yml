@@ -1,9 +1,8 @@
 # Branch triggers:
-#   dev     — Check (tests recorded in DevOps) + Docs (PlantUML)
+#   dev     — Check + Docs (PlantUML)
 #   staging — Check + Build (Tauri compile validation)
 #   v* tags — Check + Build + Release (downloadable binaries; tags are pushed from main)
-# PR trigger: Check runs on every PR so tests gate the merge, but results are NOT
-# published to DevOps Test Plans (only merged code on dev gets recorded there).
+# PR gating is handled by GitHub Actions CI (faster, no redundant build queue).
 trigger:
   branches:
     include:
@@ -13,12 +12,7 @@ trigger:
     include:
       - 'v*'
 
-pr:
-  branches:
-    include:
-      - dev
-      - staging
-      - main
+pr: none
 
 variables:
   NODE_VERSION: '20.x'
@@ -95,70 +89,6 @@ stages:
     - script: cargo clippy --manifest-path src-tauri/Cargo.toml
       displayName: 'cargo clippy'
 
-  - job: RustTest
-    displayName: 'cargo test (with results)'
-    pool:
-      vmImage: ubuntu-22.04
-    steps:
-    - task: Cache@2
-      inputs:
-        key: 'cargo-home | "$(Agent.OS)" | src-tauri/Cargo.lock'
-        restoreKeys: |
-          cargo-home | "$(Agent.OS)"
-        path: $(CARGO_HOME)
-      displayName: 'Cache cargo registry'
-    - task: Cache@2
-      inputs:
-        key: 'cargo-target-test | "$(Agent.OS)" | src-tauri/Cargo.lock'
-        restoreKeys: |
-          cargo-target-test | "$(Agent.OS)"
-        path: src-tauri/target
-      displayName: 'Cache cargo target'
-    - script: |
-        sudo apt-get update -qq
-        sudo apt-get install -y \
-          libwebkit2gtk-4.1-dev \
-          build-essential \
-          curl \
-          wget \
-          file \
-          libxdo-dev \
-          libssl-dev \
-          libayatana-appindicator3-dev \
-          librsvg2-dev
-      displayName: 'Install Tauri v2 Linux deps'
-    - script: |
-        rustup update stable
-        rustup default stable
-        # llvm-tools-preview provides the profiling tools cargo-llvm-cov needs.
-        rustup component add llvm-tools-preview
-      displayName: 'Update Rust to stable'
-    # Both tools ship prebuilt binaries, so there's no compile cost.
-    # cargo-nextest runs the tests; cargo-llvm-cov measures coverage while they run.
-    - script: |
-        curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
-        curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
-      displayName: 'Install cargo-nextest + cargo-llvm-cov'
-    # One command: run every test under coverage instrumentation, writing both the
-    # JUnit results (via the nextest `ci` profile) and a Cobertura coverage report.
-    - script: cargo llvm-cov nextest --profile ci --cobertura --output-path src-tauri/target/cobertura.xml --manifest-path src-tauri/Cargo.toml
-      displayName: 'cargo llvm-cov nextest'
-    # Publish results to DevOps Test Plans only for merged code on dev.
-    # On PRs the tests still run and the pipeline shows pass/fail, but results
-    # are not recorded against the Test Case work items.
-    - task: PublishTestResults@2
-      condition: and(always(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
-      inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: 'src-tauri/target/nextest/ci/junit.xml'
-        testRunTitle: 'Domain + repository unit tests'
-        failTaskOnFailedTests: true
-      displayName: 'Publish test results'
-    - task: PublishCodeCoverageResults@2
-      condition: and(always(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
-      inputs:
-        summaryFileLocation: 'src-tauri/target/cobertura.xml'
-      displayName: 'Publish code coverage'
 
 # Renders PlantUML diagrams to SVG and publishes them as a pipeline artifact
 - stage: Docs
