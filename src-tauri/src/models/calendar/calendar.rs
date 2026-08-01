@@ -6,7 +6,7 @@ use crate::models::calendar::calendar_event::CalendarEvent;
 use crate::models::shared::hex_color::HexColor;
 use crate::models::shared::Timestamp;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Calendar {
     pub id: String,
     pub created_at: Timestamp,

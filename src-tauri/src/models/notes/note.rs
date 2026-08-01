@@ -6,7 +6,7 @@ use crate::models::notes::note_block::NoteBlock;
 use crate::models::shared::Timestamp;
 use crate::models::tag::Tag;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Note {
     pub id: String,
     pub created_at: Timestamp,

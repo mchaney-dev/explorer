@@ -4,7 +4,7 @@ use ulid::Ulid;
 
 use crate::models::shared::Timestamp;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Frequency {
     Daily,
@@ -13,7 +13,7 @@ pub enum Frequency {
     Yearly,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum DayOfWeek {
     Monday,
@@ -25,7 +25,7 @@ pub enum DayOfWeek {
     Sunday,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct RecurrenceRule {
     pub id: String,
     pub created_at: Timestamp,

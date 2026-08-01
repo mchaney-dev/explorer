@@ -5,7 +5,7 @@ use ulid::Ulid;
 use crate::models::feed::feed_source::FeedSource;
 use crate::models::shared::Timestamp;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct FeedInterest {
     pub id: String,
     pub created_at: Timestamp,

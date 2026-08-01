@@ -5,7 +5,7 @@ use ulid::Ulid;
 use crate::models::shared::Timestamp;
 use crate::models::user::preferences::Preferences;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct User {
     pub id: String,
     pub created_at: Timestamp,

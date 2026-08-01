@@ -5,7 +5,7 @@ use ulid::Ulid;
 use crate::models::shared::Timestamp;
 use crate::models::tag::Tag;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum NodeType {
     File,
@@ -15,7 +15,7 @@ pub enum NodeType {
     Image,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Node {
     pub id: String,
     pub created_at: Timestamp,

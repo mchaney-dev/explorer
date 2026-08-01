@@ -5,7 +5,7 @@ use ulid::Ulid;
 use crate::models::shared::Timestamp;
 use crate::models::tag::Tag;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Status {
     Todo,
@@ -14,7 +14,7 @@ pub enum Status {
     Cancelled,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Priority {
     Low,
@@ -23,7 +23,7 @@ pub enum Priority {
     Urgent,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Task {
     pub id: String,
     pub created_at: Timestamp,

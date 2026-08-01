@@ -6,7 +6,7 @@ use crate::models::knowledge_graph::connection::Connection;
 use crate::models::knowledge_graph::node::Node;
 use crate::models::shared::Timestamp;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Graph {
     pub id: String,
     pub created_at: Timestamp,

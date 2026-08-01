@@ -6,14 +6,14 @@ use crate::models::feed::feed_interest::FeedInterest;
 use crate::models::shared::{HexColor, Timestamp};
 use crate::models::user::features::Features;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Theme {
     Light,
     Dark,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum DefaultView {
     Graph,
@@ -23,7 +23,7 @@ pub enum DefaultView {
     Calendar,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Preferences {
     pub id: String,
     pub created_at: Timestamp,
