@@ -44,16 +44,11 @@ const recurrenceOptions = [
   { value: "yearly", label: "Yearly" },
 ];
 
-// TODO: replace with real tasks
-const existingTasks = [
-  { value: "t1", label: "Example task 1" },
-  { value: "t2", label: "Example task 2" },
-];
-
 interface NewTaskModalProps {
   opened: boolean;
   onClose: () => void;
   projectOptions: { value: string; label: string }[];
+  parentOptions: { value: string; label: string }[];
   defaultProjectId: string;
   initial: Task | null;
   onSubmit: (task: Task) => void;
@@ -63,6 +58,7 @@ export function NewTaskModal({
   opened,
   onClose,
   projectOptions,
+  parentOptions,
   defaultProjectId,
   initial,
   onSubmit,
@@ -179,7 +175,7 @@ export function NewTaskModal({
         <Select
           label="Parent task"
           placeholder="None"
-          data={existingTasks}
+          data={parentOptions}
           value={parentId}
           onChange={setParentId}
           clearable
