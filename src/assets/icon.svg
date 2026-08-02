@@ -1,0 +1,20 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main spokes -->
+  <line x1="256" y1="255" x2="175" y2="125" stroke="#7C3AED" stroke-width="26" stroke-linecap="round"/>
+  <line x1="256" y1="255" x2="418" y2="262" stroke="#7C3AED" stroke-width="26" stroke-linecap="round"/>
+  <line x1="256" y1="255" x2="130" y2="355" stroke="#7C3AED" stroke-width="26" stroke-linecap="round"/>
+  <!-- Secondary spokes -->
+  <line x1="256" y1="255" x2="360" y2="108" stroke="#7C3AED" stroke-width="20" stroke-linecap="round"/>
+  <line x1="256" y1="255" x2="330" y2="400" stroke="#7C3AED" stroke-width="20" stroke-linecap="round"/>
+  <!-- Perimeter connections -->
+  <line x1="175" y1="125" x2="360" y2="108" stroke="#7C3AED" stroke-width="16" stroke-linecap="round"/>
+  <line x1="418" y1="262" x2="330" y2="400" stroke="#7C3AED" stroke-width="16" stroke-linecap="round"/>
+  <line x1="330" y1="400" x2="130" y2="355" stroke="#7C3AED" stroke-width="16" stroke-linecap="round"/>
+  <!-- Nodes -->
+  <circle cx="256" cy="255" r="42" fill="#7C3AED"/>
+  <circle cx="175" cy="125" r="28" fill="#7C3AED"/>
+  <circle cx="360" cy="108" r="22" fill="#7C3AED"/>
+  <circle cx="418" cy="262" r="28" fill="#7C3AED"/>
+  <circle cx="330" cy="400" r="22" fill="#7C3AED"/>
+  <circle cx="130" cy="355" r="28" fill="#7C3AED"/>
+</svg>

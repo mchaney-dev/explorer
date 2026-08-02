@@ -5,7 +5,7 @@ use ulid::Ulid;
 use crate::models::shared::Timestamp;
 use crate::models::tag::Tag;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum NodeType {
     File,
@@ -15,7 +15,7 @@ pub enum NodeType {
     Image,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Node {
     pub id: String,
     pub created_at: Timestamp,
@@ -107,5 +107,118 @@ impl Node {
 
     pub fn has_tag(&self, tag_id: &str) -> bool {
         self.tags.iter().any(|t| t.id == tag_id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::tag::Tag;
+
+    // TC-NODE-001
+    #[test]
+    fn new_defaults() {
+        let n = Node::new("Title", "Content", NodeType::Text);
+        assert_eq!(n.x, 0);
+        assert_eq!(n.y, 0);
+        assert!(n.tags.is_empty());
+        assert_eq!(n.created_at, n.updated_at);
+    }
+
+    // TC-NODE-002
+    #[test]
+    fn with_position_sets_coords() {
+        let n = Node::new("T", "", NodeType::Text).with_position(3, 4);
+        assert_eq!((n.x, n.y), (3, 4));
+    }
+
+    // TC-NODE-003
+    #[test]
+    fn set_title_changes_title() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        n.set_title("New");
+        assert_eq!(n.title, "New");
+        assert!(n.updated_at >= n.created_at);
+    }
+
+    // TC-NODE-004
+    #[test]
+    fn set_content_changes_content() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        n.set_content("New");
+        assert_eq!(n.content, "New");
+        assert!(n.updated_at >= n.created_at);
+    }
+
+    // TC-NODE-005
+    #[test]
+    fn set_type_changes_type() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        n.set_type(NodeType::Image);
+        assert!(matches!(n.node_type, NodeType::Image));
+        assert!(n.updated_at >= n.created_at);
+    }
+
+    // TC-NODE-006
+    #[test]
+    fn set_position_sets_coords() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        n.set_position(5, 6);
+        assert_eq!((n.x, n.y), (5, 6));
+        assert!(n.updated_at >= n.created_at);
+    }
+
+    // TC-NODE-007
+    #[test]
+    fn move_by_adds_delta() {
+        let mut n = Node::new("T", "", NodeType::Text).with_position(10, 10);
+        n.move_by(-3, 5);
+        assert_eq!((n.x, n.y), (7, 15));
+    }
+
+    // TC-NODE-008
+    #[test]
+    fn add_tag_adds() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        n.add_tag(Tag::new("t", None));
+        assert_eq!(n.tags.len(), 1);
+    }
+
+    // TC-NODE-009
+    #[test]
+    fn add_tag_ignores_duplicate() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        let tag = Tag::new("t", None);
+        n.add_tag(tag.clone());
+        n.add_tag(tag);
+        assert_eq!(n.tags.len(), 1);
+    }
+
+    // TC-NODE-010
+    #[test]
+    fn remove_tag_present_returns_true() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        let tag = Tag::new("t", None);
+        let id = tag.id.clone();
+        n.add_tag(tag);
+        assert!(n.remove_tag(&id));
+    }
+
+    // TC-NODE-011
+    #[test]
+    fn remove_tag_absent_returns_false() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        assert!(!n.remove_tag("nope"));
+    }
+
+    // TC-NODE-012
+    #[test]
+    fn has_tag_reflects_membership() {
+        let mut n = Node::new("T", "", NodeType::Text);
+        let tag = Tag::new("t", None);
+        let id = tag.id.clone();
+        n.add_tag(tag);
+        assert!(n.has_tag(&id));
+        assert!(!n.has_tag("nope"));
     }
 }

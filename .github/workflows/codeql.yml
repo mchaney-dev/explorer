@@ -1,0 +1,51 @@
+name: "CodeQL"
+
+# PR scans give inline annotations (matches ci.yml's targets). The push scan on
+# main keeps the default-branch baseline in the Security tab current. There is
+# deliberately no push scan on dev — that was the redundant merge-time run.
+# The weekly schedule re-scans against newly published CodeQL queries/CVEs.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [dev, main]
+  schedule:
+    - cron: "25 6 * * 1"
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+          - language: rust
+            build-mode: none
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

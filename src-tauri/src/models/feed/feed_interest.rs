@@ -5,7 +5,7 @@ use ulid::Ulid;
 use crate::models::feed::feed_source::FeedSource;
 use crate::models::shared::Timestamp;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct FeedInterest {
     pub id: String,
     pub created_at: Timestamp,
@@ -106,5 +106,122 @@ impl FeedInterest {
     /// implicit behavioural score.
     pub fn score(&self) -> f64 {
         self.explicit_weight.unwrap_or(0.0) + self.implicit_score()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TC-FEEDINT-001
+    #[test]
+    fn new_defaults() {
+        let i = FeedInterest::new("rust");
+        assert_eq!(i.open_count, 0);
+        assert_eq!(i.save_count, 0);
+        assert_eq!(i.dismiss_count, 0);
+        assert!(i.sources.is_empty());
+        assert!(i.explicit_weight.is_none());
+        assert!(i.last_interacted_at.is_none());
+    }
+
+    // TC-FEEDINT-002
+    #[test]
+    fn record_open_increments_and_stamps() {
+        let mut i = FeedInterest::new("rust");
+        i.record_open();
+        assert_eq!(i.open_count, 1);
+        assert!(i.last_interacted_at.is_some());
+    }
+
+    // TC-FEEDINT-003
+    #[test]
+    fn record_save_increments_and_stamps() {
+        let mut i = FeedInterest::new("rust");
+        i.record_save();
+        assert_eq!(i.save_count, 1);
+        assert!(i.last_interacted_at.is_some());
+    }
+
+    // TC-FEEDINT-004
+    #[test]
+    fn record_dismiss_increments_and_stamps() {
+        let mut i = FeedInterest::new("rust");
+        i.record_dismiss();
+        assert_eq!(i.dismiss_count, 1);
+        assert!(i.last_interacted_at.is_some());
+    }
+
+    // TC-FEEDINT-005
+    #[test]
+    fn set_weight_sets_it() {
+        let mut i = FeedInterest::new("rust");
+        i.set_weight(Some(2.0));
+        assert_eq!(i.explicit_weight, Some(2.0));
+    }
+
+    // TC-FEEDINT-006
+    #[test]
+    fn add_source_adds() {
+        let mut i = FeedInterest::new("rust");
+        i.add_source(FeedSource::new("s", "u"));
+        assert_eq!(i.sources.len(), 1);
+    }
+
+    // TC-FEEDINT-007
+    #[test]
+    fn add_source_ignores_duplicate() {
+        let mut i = FeedInterest::new("rust");
+        let s = FeedSource::new("s", "u");
+        i.add_source(s.clone());
+        i.add_source(s);
+        assert_eq!(i.sources.len(), 1);
+    }
+
+    // TC-FEEDINT-008
+    #[test]
+    fn remove_source_present_returns_it() {
+        let mut i = FeedInterest::new("rust");
+        let s = FeedSource::new("s", "u");
+        let id = s.id.clone();
+        i.add_source(s);
+        assert!(i.remove_source(&id).is_some());
+    }
+
+    // TC-FEEDINT-009
+    #[test]
+    fn has_source_reflects_membership() {
+        let mut i = FeedInterest::new("rust");
+        let s = FeedSource::new("s", "u");
+        let id = s.id.clone();
+        i.add_source(s);
+        assert!(i.has_source(&id));
+        assert!(!i.has_source("nope"));
+    }
+
+    // TC-FEEDINT-010
+    #[test]
+    fn implicit_score_moves_in_expected_direction() {
+        let baseline = FeedInterest::new("rust");
+
+        let mut active = FeedInterest::new("rust");
+        active.record_open();
+        active.record_open();
+        active.record_save();
+
+        let mut dismissed = FeedInterest::new("rust");
+        dismissed.record_dismiss();
+
+        assert!(active.implicit_score() > baseline.implicit_score());
+        assert!(dismissed.implicit_score() < baseline.implicit_score());
+    }
+
+    // TC-FEEDINT-011
+    #[test]
+    fn score_ranks_weighted_interest_higher() {
+        let plain = FeedInterest::new("rust");
+        let mut weighted = FeedInterest::new("rust");
+        weighted.set_weight(Some(10.0));
+        assert!(weighted.score() > plain.score());
     }
 }

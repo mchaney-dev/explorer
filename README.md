@@ -1,6 +1,7 @@
 # Explorer
 
 [![CI](https://github.com/mchaney-dev/explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/mchaney-dev/explorer/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/mchaney-dev/explorer/graph/badge.svg)](https://codecov.io/gh/mchaney-dev/explorer)
 
 A local-first desktop app for keeping your notes, tasks, calendar, knowledge graph, and custom content feeds in one place. Built as an accessible alternative to Obsidian and Logseq.
 
@@ -16,9 +17,9 @@ Early development.
 
 ## Roadmap
 - [x] Backend
-- [ ] Database layer
-- [ ] Middleware
-- [ ] UI/UX
+- [x] Database layer
+- [x] Middleware
+- [x] UI/UX
 - [ ] Build
 - [ ] Complete documentation
 
