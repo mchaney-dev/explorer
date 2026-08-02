@@ -4,7 +4,7 @@ use ulid::Ulid;
 
 use crate::models::shared::Timestamp;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum BlockType {
     Text,
@@ -13,7 +13,7 @@ pub enum BlockType {
     Embed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct NoteBlock {
     pub id: String,
     pub created_at: Timestamp,

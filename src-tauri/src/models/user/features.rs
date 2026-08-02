@@ -4,7 +4,7 @@ use ulid::Ulid;
 
 use crate::models::shared::Timestamp;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Feature {
     KnowledgeGraph,
@@ -15,7 +15,7 @@ pub enum Feature {
     Notes,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Features {
     pub id: String,
     pub created_at: Timestamp,

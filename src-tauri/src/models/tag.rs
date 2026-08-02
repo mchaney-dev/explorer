@@ -4,7 +4,7 @@ use ulid::Ulid;
 
 use crate::models::shared::{HexColor, Timestamp};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Tag {
     pub id: String,
     pub created_at: Timestamp,

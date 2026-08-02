@@ -7,7 +7,7 @@ use crate::models::shared::Timestamp;
 use crate::models::tag::Tag;
 use crate::models::tasks::task::Task;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Project {
     pub id: String,
     pub created_at: Timestamp,

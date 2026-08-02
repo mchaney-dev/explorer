@@ -16,8 +16,11 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    // Disabled because the auto-generated src/bindings.ts (tauri-specta) emits
+    // unused declarations for events/channels you don't use yet. Re-enable if
+    // you'd rather catch unused code and instead suppress that one file.
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],

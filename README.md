@@ -18,8 +18,8 @@ Early development.
 ## Roadmap
 - [x] Backend
 - [x] Database layer
-- [ ] Middleware
-- [ ] UI/UX
+- [x] Middleware
+- [x] UI/UX
 - [ ] Build
 - [ ] Complete documentation
 

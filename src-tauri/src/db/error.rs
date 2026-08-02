@@ -4,14 +4,13 @@ use std::fmt;
 
 pub type DbResult<T> = Result<T, DbError>;
 
-#[derive(Debug)]
+#[derive(Debug, specta::Type)]
 pub enum DbError {
-    Sqlite(rusqlite::Error),
+    Sqlite(String),
     NotFound,
     Migration(String),
 }
 
-/// Format depending on error type
 impl fmt::Display for DbError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -26,12 +25,10 @@ impl std::error::Error for DbError {}
 
 impl From<rusqlite::Error> for DbError {
     fn from(e: rusqlite::Error) -> Self {
-        // transform QueryReturnedNoRows error to more readable NotFound
         if matches!(e, rusqlite::Error::QueryReturnedNoRows) {
             DbError::NotFound
         } else {
-            // otherwise, use generic Sqlite error
-            DbError::Sqlite(e)
+            DbError::Sqlite(e.to_string())
         }
     }
 }
