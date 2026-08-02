@@ -1,6 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { ActionIcon, Badge, Card, Group, Menu, Text } from "@mantine/core";
-import { IconDots } from "@tabler/icons-react";
+import { IconDots, IconRepeat } from "@tabler/icons-react";
 import type { Task } from "./types";
 
 const priorityColors: Record<string, string> = {
@@ -73,10 +73,32 @@ export function TaskCard({ task, color, onEdit, onDelete }: TaskCardProps) {
         </Group>
       </Group>
 
-      {task.dueDate && (
-        <Text size="xs" c="dimmed" mt={6}>
-          Due {task.dueDate.toLocaleDateString()}
-        </Text>
+      {(task.dueDate || task.recurrence) && (
+        <Group gap="sm" mt={6} wrap="nowrap">
+          {task.dueDate && (
+            <Text size="xs" c="dimmed">
+              Due {task.dueDate.toLocaleDateString()}
+            </Text>
+          )}
+          {task.recurrence && (
+            <Group gap={4} wrap="nowrap" c="dimmed">
+              <IconRepeat size={12} stroke={1.5} />
+              <Text size="xs" tt="capitalize">
+                {task.recurrence.frequency}
+              </Text>
+            </Group>
+          )}
+        </Group>
+      )}
+
+      {task.tags.length > 0 && (
+        <Group gap={4} mt={6}>
+          {task.tags.map((tag) => (
+            <Badge key={tag} size="xs" variant="light" color="gray">
+              {tag}
+            </Badge>
+          ))}
+        </Group>
       )}
     </Card>
   );

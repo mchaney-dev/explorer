@@ -4,6 +4,7 @@ import {
   ColorInput,
   Group,
   Modal,
+  MultiSelect,
   Stack,
   TagsInput,
   Textarea,
@@ -15,22 +16,28 @@ interface NewProjectModalProps {
   opened: boolean;
   onClose: () => void;
   initial: Project | null;
-  onSubmit: (project: Project) => void;
+  taskOptions: { value: string; label: string }[];
+  initialTaskIds: string[];
+  onSubmit: (project: Project, taskIds: string[]) => void;
 }
 
 export function NewProjectModal({
   opened,
   onClose,
   initial,
+  taskOptions,
+  initialTaskIds,
   onSubmit,
 }: NewProjectModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [taskIds, setTaskIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!opened) return;
+    setTaskIds(initialTaskIds);
     if (initial) {
       setTitle(initial.title);
       setDescription(initial.description);
@@ -42,17 +49,20 @@ export function NewProjectModal({
       setColor("");
       setTags([]);
     }
-  }, [opened, initial]);
+  }, [opened, initial, initialTaskIds]);
 
   function handleSubmit() {
-    onSubmit({
-      id: initial?.id ?? crypto.randomUUID(),
-      title,
-      description,
-      color: color || null,
-      tags,
-      isArchived: initial?.isArchived ?? false,
-    });
+    onSubmit(
+      {
+        id: initial?.id ?? crypto.randomUUID(),
+        title,
+        description,
+        color: color || null,
+        tags,
+        isArchived: initial?.isArchived ?? false,
+      },
+      taskIds,
+    );
     onClose();
   }
 
@@ -94,6 +104,16 @@ export function NewProjectModal({
           placeholder="Type and press Enter"
           value={tags}
           onChange={setTags}
+        />
+
+        <MultiSelect
+          label="Tasks"
+          placeholder="Assign tasks to this project"
+          data={taskOptions}
+          value={taskIds}
+          onChange={setTaskIds}
+          searchable
+          clearable
         />
 
         <Group justify="flex-end" mt="sm">

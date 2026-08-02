@@ -1,5 +1,23 @@
 export const UNASSIGNED = "unassigned";
 
+export const WEEKDAYS = [
+  { value: "monday", label: "Mon" },
+  { value: "tuesday", label: "Tue" },
+  { value: "wednesday", label: "Wed" },
+  { value: "thursday", label: "Thu" },
+  { value: "friday", label: "Fri" },
+  { value: "saturday", label: "Sat" },
+  { value: "sunday", label: "Sun" },
+] as const;
+
+export interface RecurrenceDraft {
+  frequency: string;
+  interval: number | null;
+  daysOfWeek: string[];
+  dayOfMonth: number | null;
+  endDate: Date | null;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -9,7 +27,7 @@ export interface Task {
   priority: string;
   dueDate: Date | null;
   parentId: string | null;
-  recurrence: string | null;
+  recurrence: RecurrenceDraft | null;
   tags: string[];
 }
 

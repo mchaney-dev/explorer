@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   ActionIcon,
+  Badge,
   ColorSwatch,
   Group,
   Menu,
@@ -81,6 +82,16 @@ export function ProjectCard({
         <Text size="sm" c="dimmed">
           {project.description || "No description"}
         </Text>
+
+        {project.tags.length > 0 && (
+          <Group gap={4}>
+            {project.tags.map((tag) => (
+              <Badge key={tag} size="xs" variant="light" color="gray">
+                {tag}
+              </Badge>
+            ))}
+          </Group>
+        )}
       </Stack>
     </Paper>
   );

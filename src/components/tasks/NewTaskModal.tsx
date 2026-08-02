@@ -10,7 +10,8 @@ import {
   TextInput,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { UNASSIGNED, type Task } from "./types";
+import { RecurrenceEditor } from "./RecurrenceEditor";
+import { UNASSIGNED, type RecurrenceDraft, type Task } from "./types";
 
 function toDate(value: string | null): Date | null {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -35,13 +36,6 @@ const priorityOptions = [
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
   { value: "urgent", label: "Urgent" },
-];
-
-const recurrenceOptions = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "yearly", label: "Yearly" },
 ];
 
 interface NewTaskModalProps {
@@ -70,7 +64,7 @@ export function NewTaskModal({
   const [priority, setPriority] = useState<string | null>("medium");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
-  const [recurrence, setRecurrence] = useState<string | null>(null);
+  const [recurrence, setRecurrence] = useState<RecurrenceDraft | null>(null);
   const [tags, setTags] = useState<string[]>([]);
 
   useEffect(() => {
@@ -182,14 +176,7 @@ export function NewTaskModal({
           searchable
         />
 
-        <Select
-          label="Recurrence"
-          placeholder="Does not repeat"
-          data={recurrenceOptions}
-          value={recurrence}
-          onChange={setRecurrence}
-          clearable
-        />
+        <RecurrenceEditor value={recurrence} onChange={setRecurrence} />
 
         <TagsInput
           label="Tags"
