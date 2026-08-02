@@ -1,13 +1,12 @@
 # Branch triggers:
-#   dev     — Check + Docs (PlantUML)
-#   staging — Check + Build (Tauri compile validation)
+#   dev     — Docs (PlantUML) only
 #   v* tags — Check + Build + Release (downloadable binaries; tags are pushed from main)
-# PR gating is handled by GitHub Actions CI (faster, no redundant build queue).
+# PR gating (dev/main) is handled by GitHub Actions CI, so this pipeline
+# does no per-push checks or builds — installers are produced only at release time.
 trigger:
   branches:
     include:
       - dev
-      - staging
   tags:
     include:
       - 'v*'
@@ -21,10 +20,12 @@ variables:
 
 stages:
 
-# Runs on every push and PR. Two parallel jobs — frontend and Rust — so
-# a TypeScript error and a Rust error both surface in the same run.
+# Fast pre-build gate — only runs on release tags, right before the expensive
+# installer build. Two parallel jobs (frontend + Rust) so a TypeScript error and
+# a Rust error both surface in the same run. PR-time checking lives in GitHub CI.
 - stage: Check
   displayName: Check
+  condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
   jobs:
 
   - job: Frontend
@@ -93,8 +94,8 @@ stages:
 # Renders PlantUML diagrams to SVG and publishes them as a pipeline artifact
 - stage: Docs
   displayName: Docs
-  dependsOn: Check
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+  dependsOn: []
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/dev')
   jobs:
   - job: RenderDiagrams
     displayName: 'Render PlantUML -> SVG'
@@ -116,7 +117,7 @@ stages:
 - stage: Build
   displayName: 'Tauri build'
   dependsOn: Check
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/staging'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v')))
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
   jobs:
 
   - job: Windows
